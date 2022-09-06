@@ -1,4 +1,8 @@
+// myFlix-client/src/main-view/main-view.jsx
 import React from 'react';
+import axios from 'axios';
+
+import { LoginView } from '../login-view/login-view';
 import { MovieCard } from '../movie-card/movie-card';
 import { MovieView } from '../movie-view/movie-view';
 
@@ -6,67 +10,63 @@ export class MainView extends React.Component {
 
     constructor() {
         super();
+        // Initial state is set to null
         this.state = {
-            movies: [
-                {
-                    _id: '1',
-                    Title: 'Inception',
-                    Description: 'Dom Cobb (Leonardo DiCaprio) is a thief with the rare ability to enter the dreams of people and play with their subcoscious ',
-                    Director: {
-                        Name: 'Christopher Nolan',
-                    },
-                    Genre: {
-                        Name: 'Action',
-                    },
-                    ImagePath: 'https://upload.wikimedia.org/wikipedia/en/2/2e/Inception_%282010%29_theatrical_poster.jpg',
-                },
-                {
-                    _id: '2',
-                    Title: 'The Shawshank Redemption',
-                    Description: 'Two imprisoned men bond over a number of years, finding solace and eventual redemption through acts of common decency.',
-                    Director: {
-                        Name: 'Frank Darabont',
-                    },
-                    Genre: {
-                        Name: 'Drama',
-                    },
-                    ImagePath: 'https://upload.wikimedia.org/wikipedia/en/8/81/ShawshankRedemptionMoviePoster.jpg',
-                },
-                {
-                    _id: '3',
-                    Title: 'Gladiator',
-                    Description: 'A former Roman General sets out to exact vengeance against the corrupt emperor who murdered his family and sent him into slavery.',
-                    Director: {
-                        Name: 'Ridley Scott',
-                    },
-                    Genre: {
-                        Name: 'Action',
-                    },
-                    ImagePath: 'https://upload.wikimedia.org/wikipedia/en/f/fb/Gladiator_%282000_film_poster%29.png',
-                    Featured: false
-                },
-            ],
-            selectedMovie: null
+            movies: [],
+            selectedMovie: null,
+            user: null
         };
     }
 
-    setSelectedMovie(newSelectedMovie) {
+    componentDidMount() {
+        axios.get('https://wlad-movie-app.herokuapp.com/movies')
+            .then(response => {
+                this.setState({
+                    movies: response.data
+                });
+            })
+            .catch(error => {
+                console.log(error);
+            });
+    }
+
+    /*When a movie is clicked, this function is invoked and updates the state of the `selectedMovie` *property to that movie*/
+
+    setSelectedMovie(movie) {
         this.setState({
-            selectedMovie: newSelectedMovie
+            selectedMovie: movie
         });
     }
 
+    /* When a user successfully logs in, this function updates the `user` property in state to that *particular user*/
+
+    onLoggedIn(user) {
+        this.setState({
+            user
+        });
+    }
+
+
     render() {
-        const { movies, selectedMovie } = this.state;
+        const { movies, selectedMovie, user } = this.state;
 
-        if (selectedMovie) return <MovieView movie={selectedMovie} onBackClick={newSelectedMovie => { this.setSelectedMovie(newSelectedMovie); }} />;
+        /* If there is no user, the LoginView is rendered. If there is a user logged in, the user details are *passed as a prop to the LoginView*/
+        if (!user) return <LoginView onLoggedIn={user => this.onLoggedIn(user)} />;
 
-        if (movies.length === 0) return <div className='main-view'>The list is empty!</div>;
+        // Before the movies have been loaded
+        if (movies.length === 0) return <div className="main-view" />;
 
         return (
-            <div className='main-view'>
-                {movies.map(movie => <MovieCard key={movie._id} movie={movie} onMovieClick={newSelectedMovie => { this.setState({ selectedMovie: newSelectedMovie }); }} />)}
+            <div className="main-view">
+                {/*If the state of `selectedMovie` is not null, that selected movie will be returned otherwise, all *movies will be returned*/}
+                {selectedMovie
+                    ? <MovieView movie={selectedMovie} onBackClick={newSelectedMovie => { this.setSelectedMovie(newSelectedMovie); }} />
+                    : movies.map(movie => (
+                        <MovieCard key={movie._id} movie={movie} onMovieClick={(newSelectedMovie) => { this.setSelectedMovie(newSelectedMovie) }} />
+                    ))
+                }
             </div>
         );
     }
 }
+
